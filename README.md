@@ -19,4 +19,5 @@ Easier One Hand Navigation for Home Assistant
 1. Download the `ha-mobile-ui.js` file from the repo and place it in your `www` folder of home assistant.
 2. Add the following to your `ui-lovelace.yaml` file:
 
+## With easy configuration
 ![Configuration Card](images/card.png)
