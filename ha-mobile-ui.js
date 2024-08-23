@@ -36,7 +36,7 @@ class MobileUI {
             return window.localStorage.getItem("fast_mobile_ui-" + type);
         } else {
             console.log("no state found");
-            return true;
+            return false;
         }
     }
 
@@ -76,10 +76,20 @@ class MobileUI {
     }
 
     moveSidebar(revert = false) {
-        this.content.style.paddingRight = "var(--mdc-drawer-width)";
-        this.content.style.paddingLeft = "0px";
-        this.aside.style.setProperty("right", "0px", "important");
-        this.aside.style.setProperty("inset-inline-start", "revert", "important");
+        if (revert) {
+            window.mobileUI.content.style.paddingLeft = "var(--mdc-drawer-width)";
+            window.mobileUI.content.style.paddingRight = "0px";
+            window.mobileUI.aside.style.removeProperty("right");
+            window.mobileUI.aside.style.removeProperty("inset-inline-start");
+            if (window.mobileUI.observers.sidebar) {
+                window.mobileUI.observers.sidebar.disconnect();
+            }
+            return;
+        }
+        window.mobileUI.content.style.paddingRight = "var(--mdc-drawer-width)";
+        window.mobileUI.content.style.paddingLeft = "0px";
+        window.mobileUI.aside.style.setProperty("right", "0px", "important");
+        window.mobileUI.aside.style.setProperty("inset-inline-start", "revert", "important");
 
         var sidebarObserver = new MutationObserver((mutationsList) => {
             for (const mutation of mutationsList) {
@@ -156,6 +166,173 @@ class MobileUI {
     }
 
 }
+
+
+class MobileUIConfigurationCard extends LitElement {
+
+    getState(type) {
+        if (window.localStorage.getItem("fast_mobile_ui-" + type)) {
+            console.log("getState", window.localStorage.getItem("fast_mobile_ui-" + type));
+            return window.localStorage.getItem("fast_mobile_ui-" + type);
+        } else {
+            console.log("no state found");
+            return false;
+        }
+    }
+
+    setState(type, state) {
+        console.log(type, state, "setState");
+        window.localStorage.setItem("fast_mobile_ui-" + type, state);
+    }
+
+    _handleClick(ev) {
+        ev.stopPropagation();
+        console.log(switchElement.__checked);
+        this.setState(type, switchElement.__checked);
+        callback(!switchElement.__checked);
+    }
+
+    createSwitchElement(name, type, callback) {
+        var box = document.createElement("div");
+        box.style.height = "40px";
+        var title = document.createElement("div");
+        title.style.display = "inline-block";
+        title.style.padding = "10px 0px";
+        title.style.paddingLeft = "15px";
+        title.title = name;
+        title.innerText = name;
+        box.appendChild(title);
+        var switchElement = document.createElement("label");
+        switchElement.classList.add("switch");
+        var switchInput = document.createElement("input");
+        switchInput.type = "checkbox";
+        switchInput.checked = window.mobileUI.getState(type) == "true";
+        switchInput.onchange = () => {
+            console.log(switchInput.checked);
+            this.setState(type, switchInput.checked);
+            callback(!switchInput.checked);
+        };
+        switchElement.appendChild(switchInput);
+        var switchSpan = document.createElement("span");
+        switchSpan.classList.add("slider");
+        switchElement.appendChild(switchSpan);
+        box.appendChild(switchElement);
+        return box;
+    }
+
+    createButtonElement(name, callback) {
+        var root = document.createElement("div");
+        root.style.height = "40px";
+        var title = document.createElement("div");
+        title.style.display = "inline-block";
+        title.style.padding = "10px 0px";
+        title.style.paddingLeft = "15px";
+        title.title = name;
+        title.innerText = name;
+        root.appendChild(title);
+        var mwc = document.createElement("mwc-button");
+        mwc.onclick = callback;
+        mwc.label = name;
+        mwc.style = "float: right;"
+        root.appendChild(mwc);
+        return root;
+    }
+
+    render() {
+        var card = document.createElement("ha-card");
+        var root = document.createElement("div");
+        root.id = "states";
+        root.classList.add("card-content");
+        root.appendChild(this.createSwitchElement("Sidebar right", "sidebar", window.mobileUI.moveSidebar));
+        root.appendChild(this.createSwitchElement("Navbar bottom", "navbar", window.mobileUI.moveNavbar));
+        root.appendChild(this.createButtonElement("Reload page", () => window.location.reload(true)));
+        card.appendChild(root);
+        return html `${card}`;
+    }
+
+    static get styles() {
+        return css `
+        #states > * {
+            margin: 8px 0px;
+        }
+        #states > *:first-child {
+            margin-top: 0px;
+        }
+        #states > *:last-child {
+            margin-bottom: 0px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 45px;
+            height: 26px;
+            float: right;
+            bottom: -6px;
+          }
+          
+          .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+          }
+          
+          .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 34px;
+          }
+          
+          .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 34px;
+          }
+          
+          input:checked + .slider {
+            background-color: #2196F3;
+          }
+          
+          input:focus + .slider {
+            box-shadow: 0 0 1px #2196F3;
+          }
+          
+          input:checked + .slider:before {
+            -webkit-transform: translateX(19px);
+            -ms-transform: translateX(19px);
+            transform: translateX(19px);
+            border-radius: 50%;
+          }
+        `;
+    }
+
+    setConfig(config) {};
+
+    getCardSize() {
+        return 3;
+    }
+}
+
+customElements.define("mobile-ui-configuration-card", MobileUIConfigurationCard);
+window.customCards.push({
+    type: 'mobile-ui-configuration-card',
+    name: 'Mobile UI Configuration Card',
+    description: 'Configure the mobile UI'
+});
 
 window.mobileUI = new MobileUI();
 window.mobileUI.start();
