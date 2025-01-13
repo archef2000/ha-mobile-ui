@@ -93,7 +93,7 @@ class MobileUI {
 
         var sidebarObserver = new MutationObserver((mutationsList) => {
             for (const mutation of mutationsList) {
-                list = mutation.target.classList;
+                var list = mutation.target.classList;
                 console.log(list);
                 if (list.contains("mdc-drawer--closing")) {
                     console.log("closing");
